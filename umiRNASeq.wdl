@@ -41,7 +41,7 @@ task StarAlign {
       File r1_fastq
       File r2_fastq
       File reference
-      String reference_prefix = ""
+      String reference_prefix = "STAR_INDEX/SA_88"
       String docker = "us.gcr.io/broad-dsde-methods/sabeti-bulk-plp-star:0.0.1"
 
       # runtime values
@@ -64,7 +64,7 @@ task StarAlign {
       STAR \
           --runMode alignReads \
           --runThreadN ${cpu} \
-          --genomeDir genome_reference \
+          --genomeDir genome_reference/~{reference_prefix}/ \
           --readFilesIn ~{r1_fastq} ~{r2_fastq}
           --outSAMtype BAM Unsorted \
           --outSAMattributes All \
