@@ -41,7 +41,7 @@ task StarAlign {
       File r1_fastq
       File r2_fastq
       File reference
-      String reference_prefix = "STAR_INDEX/SA_88"
+      String reference_prefix = ""
       String docker = "us.gcr.io/broad-dsde-methods/sabeti-bulk-plp-star:0.0.1"
 
       # runtime values
