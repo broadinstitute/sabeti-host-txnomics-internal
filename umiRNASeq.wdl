@@ -45,10 +45,10 @@ task StarAlign {
       String docker = "us.gcr.io/broad-dsde-methods/sabeti-bulk-plp-star:0.0.1"
 
       # runtime values
-      Int machine_mem_mb = ceil((size(tar_star_reference, "Gi")) + 6) * 1100
+      Int machine_mem_mb = ceil((size(reference, "Gi")) + 6) * 1100
       Int cpu = 1
       # multiply input size by 2.2 to account for output bam file + 20% overhead, add size of reference.
-      Int disk = ceil((size(tar_star_reference, "Gi") * 2.5) + (size(bam_input, "Gi") * 2.5))
+      Int disk = ceil((size(reference, "Gi") * 2.5) + (size(bam_input, "Gi") * 2.5))
       # by default request non preemptible machine to make sure the slow star alignment step completes
       Int preemptible = 0
   }
@@ -58,8 +58,8 @@ task StarAlign {
 
       # prepare reference
       mkdir genome_reference
-      tar -xf "${tar_star_reference}" -C genome_reference --strip-components 1
-      rm "${tar_star_reference}"
+      tar -xf "${reference}" -C genome_reference --strip-components 1
+      rm "${reference}"
 
       STAR \
           --runMode alignReads \
@@ -83,7 +83,7 @@ task StarAlign {
       }
 
   output {
-      File bam_output = "Aligned.out.bam"
+      File out_bam = "Aligned.out.bam"
       File alignment_log = "Log.final.out"
    }
 }
@@ -209,7 +209,7 @@ workflow umiRnaSeq {
       r3_fastq = r3_fastq
   }
 
-  call hisat2_align_pe {
+  call StarAlign {
     input:
       r1_fastq = umiTagger.r1_out_fastq,
       r2_fastq = umiTagger.r3_out_fastq,
@@ -218,7 +218,7 @@ workflow umiRnaSeq {
 
   call sort_and_index {
     input:
-      input_bam = hisat2_align_pe.out_bam
+      input_bam = StarAlign.out_bam
   }
 
   call removeDuplicates {
