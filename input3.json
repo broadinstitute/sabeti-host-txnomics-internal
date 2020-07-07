@@ -1,0 +1,7 @@
+{
+  "umiRnaSeq.r3_fastq": "/home/conda-user/disk1/umi-rna-seq-pipeline/wdl/r3.fastq.gz",
+  "umiRnaSeq.r2_fastq": "/home/conda-user/disk1/umi-rna-seq-pipeline/wdl/r2.fastq.gz",
+  "umiRnaSeq.r1_fastq": "/home/conda-user/disk1/umi-rna-seq-pipeline/wdl/r1.fastq.gz",
+  "umiRnaSeq.reference": "/home/conda-user/disk1/umi-rna-seq-pipeline/align/grch38.tar.gz"
+}
+
