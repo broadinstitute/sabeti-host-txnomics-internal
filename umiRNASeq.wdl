@@ -12,7 +12,7 @@ task umiTagger {
   String r1_out_name = "r1.fastq.gz"
   String r3_out_name = "r3.fastq.gz"
   Int cpu = 1
-  Int disk = ceil(size(r1_fastq, "GiB") * 2 + size(r2_fastq, "GiB") + size(r3_fastq, "GiB") * 2 +  1)
+  Int disk = ceil(size(r1_fastq, "GiB") * 2 + size(r2_fastq, "GiB") + size(r3_fastq, "GiB") * 2 +  10)
   Int preemptible = 3
 
   command {
@@ -48,7 +48,7 @@ task StarAlign {
       Int machine_mem_mb = ceil((size(reference, "Gi")) + 6) * 1100
       Int cpu = 1
       # multiply input size by 2.2 to account for output bam file + 20% overhead, add size of reference.
-      Int disk = ceil((size(reference, "GiB") * 2.5) + (size(r1_fastq, "GiB") * 2.5) + size(r2_fastq) * 2.5 )
+      Int disk = ceil((size(reference, "GiB") * 2.5) + (size(r1_fastq, "GiB") * 2.5) + size(r2_fastq) * 2.5 + 1)
       # by default request non preemptible machine to make sure the slow star alignment step completes
       Int preemptible = 0
   }
