@@ -33,8 +33,63 @@ task umiTagger {
     File r1_out_fastq = r1_out_name
     File r3_out_fastq = r3_out_name
   }
-  
 }
+
+
+task StarAlign {
+  input {
+      File r1_fastq
+      File r2_fastq
+      File reference
+      String reference_prefix = ""
+      String docker = "star:0.0.1"
+
+      # runtime values
+      String docker = ""
+      Int machine_mem_mb = ceil((size(tar_star_reference, "Gi")) + 6) * 1100
+      Int cpu = 1
+      # multiply input size by 2.2 to account for output bam file + 20% overhead, add size of reference.
+      Int disk = ceil((size(tar_star_reference, "Gi") * 2.5) + (size(bam_input, "Gi") * 2.5))
+      # by default request non preemptible machine to make sure the slow star alignment step completes
+      Int preemptible = 0
+  }
+
+  command {
+      set -e
+
+      # prepare reference
+      mkdir genome_reference
+      tar -xf "${tar_star_reference}" -C genome_reference --strip-components 1
+      rm "${tar_star_reference}"
+
+      STAR \
+          --runMode alignReads \
+          --runThreadN ${cpu} \
+          --genomeDir genome_reference \
+          --readFilesIn ~{r1_fastq} ~{r2_fastq}
+          --outSAMtype BAM Unsorted \
+          --outSAMattributes All \
+          --outSAMunmapped Within \
+          --readFilesType Fastqx \
+          --readFilesCommand zcat \
+          --runRNGseed 777
+        }
+
+      runtime {
+          docker: docker
+          memory: "${machine_mem_mb} MiB"
+          disks: "local-disk ${disk} HDD"
+          cpu: cpu
+          preemptible: preemptible
+      }
+
+  output {
+      File bam_output = "Aligned.out.bam"
+      File alignment_log = "Log.final.out"
+   }
+}
+
+
 
 task hisat2_align_pe {
    input {
