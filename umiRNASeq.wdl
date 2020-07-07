@@ -233,7 +233,7 @@ workflow umiRnaSeq {
     File r1_fastq_out = umiTagger.r1_out_fastq
     File r3_fastq_out = umiTagger.r3_out_fastq
 
-    File aligned_bam = hisat2_align_pe.out_bam
+    File aligned_bam = StarAlign.out_bam
 
     File sorted_bam = sort_and_index.output_bam
     File sorted_bam_index = sort_and_index.output_bam_index
