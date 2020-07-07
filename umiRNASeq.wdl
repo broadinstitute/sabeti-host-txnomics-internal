@@ -6,7 +6,7 @@ task umiTagger {
       File r2_fastq
       File r3_fastq
 
-      String docker = "umi_tagger:0.0.1"
+      String docker = "us.gcr.io/sabeti-txnomics/bulk-plp-umi_tagger:0.0.1"
   }
 
   String r1_out_name = "r1.fastq.gz"
@@ -42,10 +42,9 @@ task StarAlign {
       File r2_fastq
       File reference
       String reference_prefix = ""
-      String docker = "star:0.0.1"
+      String docker = "us.gcr.io/sabeti-txnomics/bulk-plp-star:0.0.1"
 
       # runtime values
-      String docker = ""
       Int machine_mem_mb = ceil((size(tar_star_reference, "Gi")) + 6) * 1100
       Int cpu = 1
       # multiply input size by 2.2 to account for output bam file + 20% overhead, add size of reference.
@@ -97,7 +96,7 @@ task hisat2_align_pe {
      File r2_fastq
      File reference
      String reference_prefix = "grch38/genome"
-     String docker = "hisat2:0.0.1"
+     String docker = "us.gcr.io/sabeti-txnomics/bulk-plp-hisat2:0.0.1"
    }
 
   Int cpu = 1
@@ -136,7 +135,7 @@ task sort_and_index {
     Int cpu = 1
     Int disk = ceil(size(input_bam, "GiB") * 4 + 10)
     Int preemptible = 3
-    String docker = "hisat2:0.0.1"
+    String docker = "us.gcr.io/sabeti-txnomics/bulk-plp-hisat2:0.0.1"
 
     String out_bam = "sorted.bam"
 
@@ -169,7 +168,7 @@ task removeDuplicates {
     Int cpu = 1
     Int disk = ceil(size(bam, "GiB") * 4 + 10)
     Int preemptible = 3
-    String docker = "umi_tools:0.0.1"
+    String docker = "us.gcr.io/sabeti-txnomics/bulk-plp-umi_tools:0.0.1"
 
     String out_bam = "deduplicated.bam"
 
