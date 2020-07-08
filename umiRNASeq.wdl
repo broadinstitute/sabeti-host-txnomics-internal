@@ -9,8 +9,8 @@ task umiTagger {
       String docker = "us.gcr.io/broad-dsde-methods/sabeti-bulk-plp-umi_tagger:0.0.1"
   }
 
-  String r1_out_name = "r1.fastq.gz"
-  String r3_out_name = "r3.fastq.gz"
+  String r1_out_name = "r1.fastq"
+  String r3_out_name = "r3.fastq"
   Int cpu = 1
   Int disk = ceil(size(r1_fastq, "GiB") * 2 + size(r2_fastq, "GiB") + size(r3_fastq, "GiB") * 2 +  10)
   Int preemptible = 3
@@ -65,12 +65,11 @@ task StarAlign {
           --runMode alignReads \
           --runThreadN ${cpu} \
           --genomeDir genome_reference/~{reference_prefix}/ \
-          --readFilesIn ~{r1_fastq} ~{r2_fastq}
+          --readFilesIn ~{r1_fastq} ~{r2_fastq} \
           --outSAMtype BAM Unsorted \
           --outSAMattributes All \
           --outSAMunmapped Within \
-          --readFilesType Fastqx \
-          --readFilesCommand zcat \
+          --readFilesType Fastx \
           --runRNGseed 777
         }
 
