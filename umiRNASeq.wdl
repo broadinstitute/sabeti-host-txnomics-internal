@@ -45,10 +45,10 @@ task StarAlign {
       String docker = "us.gcr.io/broad-dsde-methods/sabeti-bulk-plp-star:0.0.1"
 
       # runtime values
-      Int machine_mem_mb = ceil((size(reference, "Gi")) + 6) * 1100
+      Int machine_mem_mb = 50000
       Int cpu = 1
       # multiply input size by 2.2 to account for output bam file + 20% overhead, add size of reference.
-      Int disk = ceil((size(reference, "GiB") * 2.5) + (size(r1_fastq, "GiB") * 2.5) + size(r2_fastq) * 2.5 + 1)
+      Int disk = ceil((size(reference, "GiB") * 2.5) + (size(r1_fastq, "GiB") * 2.5) + size(r2_fastq) * 2.5) + 10
       # by default request non preemptible machine to make sure the slow star alignment step completes
       Int preemptible = 0
   }
