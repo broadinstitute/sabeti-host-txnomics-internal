@@ -46,7 +46,7 @@ task StarAlign {
 
       # runtime values
       Int machine_mem_mb = 50000
-      Int cpu = 4
+      Int cpu = 1
       # multiply input size by 2.2 to account for output bam file + 20% overhead, add size of reference.
       Int disk = 200
       # by default request non preemptible machine to make sure the slow star alignment step completes
@@ -86,44 +86,6 @@ task StarAlign {
   output {
       File out_bam = "Aligned.out.bam"
       File alignment_log = "Log.final.out"
-   }
-}
-
-
-
-task hisat2_align_pe {
-   input {
-     File r1_fastq
-     File r2_fastq
-     File reference
-     String reference_prefix = "grch38/genome"
-     String docker = "us.gcr.io/broad-dsde-methods/sabeti-bulk-plp-hisat2:0.0.1"
-   }
-
-  Int cpu = 1
-  Int disk = ceil(size(r1_fastq, "GiB") * 2 + size(r2_fastq, "GiB") + size(reference, "GiB") * 2 +  10)
-  Int preemptible = 3
-
-
-   String out_bam = "aligned.bam"
-
-   command {
-     set -e
-     tar xzf ~{reference}
-     
-     hisat2 -x ~{reference_prefix} -1 ~{r1_fastq} -2 ~{r2_fastq} | samtools view -b > ~{out_bam}
-   }
-
-   runtime {
-     docker: docker
-     memory: "4 GiB"
-     disks: "local-disk ~{disk} HDD"
-     cpu: cpu
-     preemptible: preemptible
-   }
-
-   output {
-     File out_bam = out_bam
    }
 }
 
