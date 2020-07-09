@@ -155,21 +155,62 @@ task removeDuplicates {
 
 }
 
+task fastqMerge {
+    input {
+         Array[File] r1_fastq
+         Array[File] r2_fastq
+         Array[File] r3_fastq
+    }
+    
+    Int cpu = 1
+    Int disk = 500
+    Int preemptible = 3
+    String docker = "us.gcr.io/broad-dsde-methods/sabeti-bulk-plp-umi_tools:0.0.1"
+    
+    command {
+       zcat ${r1_fastq} | gzip -c > r1_out.fastq.gz
+       zcat ${r2_fastq} | gzip -c > r2_out.fastq.gz
+       zcat ${r3_fastq} | gzip -c > r3_out.fastq.gz
+    }
+    
+    runtime {
+       docker: docker
+       memory: "4 GiB"
+       disks: "local-disk ~{disk} HDD"
+       cpu: cpu
+       preemptible: preemptible
+    }
+
+    output {
+      File r1_fastq = "r1_out.fastq.gz"
+      File r2_fastq = "r2_out.fastq.gz"
+      File r3_fastq = "r3_out.fastq.gz"
+    }
+
+}
+
 workflow umiRnaSeq {
   input {
-      File r1_fastq
-      File r2_fastq
-      File r3_fastq
+      Array[File] r1_fastq
+      Array[File] r2_fastq
+      Array[File] r3_fastq
       File reference
   }
 
   String version = "umiRNASeq_v0.0.1"
-
-  call umiTagger {
+  
+  call fastqMerge {
     input:
       r1_fastq = r1_fastq,
       r2_fastq = r2_fastq,
       r3_fastq = r3_fastq
+  }
+
+  call umiTagger {
+    input:
+      r1_fastq = fastqMerge.r1_fastq,
+      r2_fastq = fastqMerge.r2_fastq,
+      r3_fastq = fastqMerge.r3_fastq
   }
 
   call StarAlign {
