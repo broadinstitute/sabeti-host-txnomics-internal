@@ -46,7 +46,7 @@ task StarAlign {
 
       # runtime values
       Int machine_mem_mb = 50000
-      Int cpu = 1
+      Int cpu = 4
       # multiply input size by 2.2 to account for output bam file + 20% overhead, add size of reference.
       Int disk = 200
       # by default request non preemptible machine to make sure the slow star alignment step completes
@@ -58,13 +58,15 @@ task StarAlign {
 
       # prepare reference
       mkdir genome_reference
-      tar -xf "${reference}" -C genome_reference --strip-components 1
+      tar -xf "${reference}" -C genome_reference
       rm "${reference}"
+      
+      find genome_reference -type d
 
       STAR \
           --runMode alignReads \
           --runThreadN ${cpu} \
-          --genomeDir genome_reference/~{reference_prefix}/ \
+          --genomeDir genome_reference/~{reference_prefix} \
           --readFilesIn ~{r1_fastq} ~{r2_fastq} \
           --outSAMtype BAM Unsorted \
           --outSAMattributes All \
@@ -242,5 +244,4 @@ workflow umiRnaSeq {
   }
 
 }
-
 
