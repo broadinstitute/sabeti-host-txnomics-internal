@@ -142,7 +142,7 @@ task removeDuplicates {
 
     runtime {
        docker: docker
-       memory: "4 GiB"
+       memory: "64 GiB"
        disks: "local-disk ~{disk} HDD"
        cpu: cpu
        preemptible: preemptible
@@ -206,4 +206,3 @@ workflow umiRnaSeq {
   }
 
 }
-
