@@ -138,6 +138,7 @@ task removeDuplicates {
     command {
        set -e
        touch ~{bam}
+       sleep 1
        touch ~{bam}.bai
        umi_tools dedup -I ~{bam} --paired --output-stats=dedup_stats -S ~{out_bam}
     }
