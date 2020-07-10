@@ -140,7 +140,7 @@ task removeDuplicates {
        touch ~{bam}
        sleep 1
        touch ~{bam}.bai
-       umi_tools dedup -I ~{bam} --paired --output-stats=dedup_stats -S ~{out_bam}
+       umi_tools dedup -I ~{bam} --chimeric-pairs=discard --unpaired-reads=discard --paired --output-stats=dedup_stats -S ~{out_bam}
     }
 
     runtime {
