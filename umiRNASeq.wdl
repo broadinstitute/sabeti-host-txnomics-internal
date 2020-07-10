@@ -168,9 +168,9 @@ task fastqMerge {
     String docker = "us.gcr.io/broad-dsde-methods/sabeti-bulk-plp-umi_tools:0.0.1"
     
     command {
-       zcat ${r1_fastq} | gzip -c > r1_out.fastq.gz
-       zcat ${r2_fastq} | gzip -c > r2_out.fastq.gz
-       zcat ${r3_fastq} | gzip -c > r3_out.fastq.gz
+       zcat ${sep=' ' r1_fastq} | gzip -c > r1_out.fastq.gz
+       zcat ${sep=' ' r2_fastq} | gzip -c > r2_out.fastq.gz
+       zcat ${sep=' ' r3_fastq} | gzip -c > r3_out.fastq.gz
     }
     
     runtime {
