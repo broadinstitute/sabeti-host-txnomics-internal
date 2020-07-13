@@ -48,7 +48,7 @@ task StarAlign {
       Int machine_mem_mb = 50000
       Int cpu = 1
       # multiply input size by 2.2 to account for output bam file + 20% overhead, add size of reference.
-      Int disk = 200
+      Int disk = ceil(size(r1_fastq, "GiB") * 2.5 + size(r2_fastq, "GiB") * 2.5 + 50)
       # by default request non preemptible machine to make sure the slow star alignment step completes
       Int preemptible = 0
   }
@@ -166,7 +166,7 @@ task fastqMerge {
     }
     
     Int cpu = 1
-    Int disk = 500
+    Int disk = ceil(size(r1_fastq, "GiB") * 2.5 + size(r2_fastq, "GiB") * 2.5 + size(r3_fastq, "GiB") + 50)
     Int preemptible = 3
     String docker = "us.gcr.io/broad-dsde-methods/sabeti-bulk-plp-umi_tools:0.0.1"
     
