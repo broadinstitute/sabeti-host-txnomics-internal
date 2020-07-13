@@ -129,7 +129,7 @@ task removeDuplicates {
     }
 
     Int cpu = 1
-    Int disk = ceil(size(bam, "GiB") * 4 + 10)
+    Int disk = ceil(size(bam, "GiB") * 6 + 20)
     Int preemptible = 3
     String docker = "us.gcr.io/broad-dsde-methods/sabeti-bulk-plp-umi_tools:0.0.1"
 
