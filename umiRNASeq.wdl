@@ -48,7 +48,7 @@ task StarAlign {
       Int machine_mem_mb = 50000
       Int cpu = 1
       # multiply input size by 2.2 to account for output bam file + 20% overhead, add size of reference.
-      Int disk = ceil(size(r1_fastq, "GiB") * 2.5 + size(r2_fastq, "GiB") * 2.5 + 50)
+      Int disk = ceil(size(r1_fastq, "GiB") * 4 + size(r2_fastq, "GiB") * 4 + 100)
       # by default request non preemptible machine to make sure the slow star alignment step completes
       Int preemptible = 0
   }
