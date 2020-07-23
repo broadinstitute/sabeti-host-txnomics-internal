@@ -1,8 +1,43 @@
 version 1.0
 
+task SortAndIndex {
+  input {
+    File input_bam
+    String docker  = "us.gcr.io/broad-dsde-methods/sabeti-picard:2.23.2"
+  }
+
+  String output_bam_name = "sorted.bam"
+  String output_bai_name = "sorted.bai"
+  Int cpu = 1
+  Int disk = ceil(size(input_bam) * 3 + 10)
+  Int preemptible =3 
+
+  command {
+    set -e
+
+    java -jar $PICARD_JAR_PATH SortSam I=~{input_bam} O=~{output_bam_name} SORT_ORDER=coordinate
+    java -jar $PICARD_JAR_PATH BuildBamIndex I=~{output_bam_name}
+  }
+
+  runtime {
+    docker: docker
+    memory: "2 GiB"
+    disks: "local-disk ~{disk} HDD"
+    cpu: cpu
+    preemptible: preemptible
+  }
+
+  output {
+    File output_bam = output_bam_name
+    File output_bai = output_bai_name
+  }
+
+}
+
 task FilterReads {
   input {
     File input_bam
+    File input_bam_index
     String region_keep
     
     String docker = "us.gcr.io/broad-dsde-methods/sabeti-picard:2.23.2"
@@ -16,7 +51,7 @@ task FilterReads {
   command {
     set -e
     
-    samtools view ~{input_bam} ~{region_keep} > ~{output_bam_name}
+    samtools view -b ~{input_bam} ~{region_keep} > ~{output_bam_name}
   }
 
   runtime {
@@ -58,7 +93,7 @@ task RevertSam {
   }
 
   output {
-    File output_bam = ~{output_bam_name}
+    File output_bam = output_bam_name
   }
 
 }
@@ -71,7 +106,7 @@ task SamToFastq {
 
   String output_fastq_name = "reverted.fastq"
   Int cpu = 1
-  Int disk = ceil(size(input_bam), "GiB") * 4 + 10)
+  Int disk = ceil(size(input_bam, "GiB") * 4 + 10)
   Int preemptible = 3
 
   command {
@@ -89,7 +124,7 @@ task SamToFastq {
   }
 
   output {
-    output_fastq = ~{output_fastq_name}
+    File output_fastq = output_fastq_name
   }
 }
 
@@ -97,8 +132,9 @@ task BWAalign {
   input {
     File input_fastq
     File reference_bundle
+    String reference_bundle_prefix
     
-    String docker = ""
+    String docker = "us.gcr.io/broad-dsde-methods/sabeti-bwa:0.7.17"
   }
 
   String output_bam_name = "aligned.bam"
@@ -108,8 +144,10 @@ task BWAalign {
 
   command {
     set -e
+
+    tar xvzf ~{reference_bundle}
     
-    bwa mem -t ~{cpu} bwa_ebov/kitwit9510621_KU182905.1.fasta ~{input_fastq} | samtools view -b - > ~{output_bam_name}
+    bwa mem -t ~{cpu} ~{reference_bundle_prefix} ~{input_fastq} | samtools view -b - > ~{output_bam_name}
   }
 
   runtime {
@@ -121,7 +159,7 @@ task BWAalign {
   }
 
   output {
-    File output_bam = ~{output_bam_name}
+    File output_bam = output_bam_name
   }
 }
 
@@ -130,14 +168,33 @@ task MergeBamAlignment {
     File input_aligned_bam
     File input_unaligned_bam
     File reference_fasta
+    
     String docker="us.gcr.io/broad-dsde-methods/sabeti-picard:2.23.2"
   }
 
   String output_bam_name = "merged_alignments.bam"
+  Int cpu = 1
+  Int disk = ceil(size(input_aligned_bam, "GiB") * 4 + size(input_unaligned_bam, "GiB") + 10)
+  Int preemptible = 3
 
   command {
-    java -jar ~{PICARD_JAR_PATH} MergeBamAlignment ALIGNED=~{input_aligned_bam} UNMAPPED=~{input_unaligned_bam} O=~{output_bam_name} REFERENCE_SEQUENCE=~{reference_fasta}
+    set -e
+    java -jar $PICARD_JAR_PATH CreateSequenceDictionary R=~{reference_fasta}
+    java -jar $PICARD_JAR_PATH MergeBamAlignment ALIGNED=~{input_aligned_bam} UNMAPPED=~{input_unaligned_bam} O=~{output_bam_name} REFERENCE_SEQUENCE=~{reference_fasta}
   }
+
+  output {
+    File output_bam = output_bam_name
+  }
+
+  runtime {
+    docker: docker
+    memory: "2 GiB"
+    disk: "local-disk ~{disk} HDD"
+    cpu: cpu
+    preemptible: preemptible
+  }
+  
 }
 
 task TagReadWithGeneFunction {
@@ -212,14 +269,22 @@ workflow scViralPreprocess {
     File input_bam
     String viral_contig
     File reference_bundle
+    String reference_bundle_prefix
     File annotations_gtf
+    File reference_fasta
   }
 
   String version = "scViralPreprocess_v0.0.1"
 
-  call FilterReads {
+  call SortAndIndex {
     input:
       input_bam = input_bam
+  }
+
+  call FilterReads {
+    input:
+      input_bam = SortAndIndex.output_bam,
+      input_bam_index = SortAndIndex.output_bai,
       region_keep = viral_contig
   }
 
@@ -235,24 +300,26 @@ workflow scViralPreprocess {
 
   call BWAalign {
     input:
-      input_bam = SamToFastq.output_bam
-      reference_bundle = reference_bundle
+      input_fastq = SamToFastq.output_fastq,
+      reference_bundle = reference_bundle,
+      reference_bundle_prefix = reference_bundle_prefix
   }
 
   call MergeBamAlignment {
     input:
-      input_aligned = BWAalign.output_bam
-      input_unmapped = RevertSam.output_bam
+      input_aligned_bam = BWAalign.output_bam,
+      input_unaligned_bam = RevertSam.output_bam,
+      reference_fasta = reference_fasta
   }
 
   call TagReadWithGeneFunction {
     input:
-      bam_input = MergeBamAlignment.output_bam
+      bam_input = MergeBamAlignment.output_bam,
       annotations_gtf = annotations_gtf
   }
 
   output {
     String pipeline_version = version
-    File output_bam = TagReadWithGeneFunction
+    File output_bam = TagReadWithGeneFunction.bam_output
   }
 }
