@@ -1,0 +1,3 @@
+#!/bin/bash
+
+docker build -t sabeti-picard:2.23.2 .

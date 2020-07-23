@@ -1,33 +1,142 @@
 version 1.0
 
 task FilterReads {
+  input {
+    File input_bam
+    String region_keep
+    
+    String docker = "us.gcr.io/broad-dsde-methods/sabeti-picard:2.23.2"
+  }
+
+  String output_bam_name = "filtered.bam"
+  Int cpu = 1
+  Int disk = ceil(size(input_bam, "GiB") * 4 + 10)
+  Int preemptible = 3
+
   command {
-    samtools view ~{input_bam} ~{region_keep}
+    set -e
+    
+    samtools view ~{input_bam} ~{region_keep} > ~{output_bam_name}
+  }
+
+  runtime {
+    docker: docker
+    memory: "2 GiB"
+    disks: "local-disk ~{disk} HDD"
+    cpu: cpu
+    preemptible: preemptible
+  }
+
+  output {
+    File output_bam = output_bam_name
   }
 }
 
 task RevertSam {
-  command {
-    java -jar $PICARD_JAR_PATH RevertSam I=${INPUT_BAM} O=reverted.bam
+  input {
+    File input_bam
+    String docker = "us.gcr.io/broad-dsde-methods/sabeti-picard:2.23.2"
   }
+
+  String output_bam_name = "reverted.bam"
+  Int cpu = 1
+  Int disk = ceil(size(input_bam, "GiB") * 4 + 10)
+  Int preemptible = 3
+
+  command {
+    set -e
+    
+    java -jar $PICARD_JAR_PATH RevertSam I=~{input_bam} O=~{output_bam_name}
+  }
+
+  runtime {
+    docker: docker
+    memory: "2 GiB"
+    disks: "local-disk ~{disk} HDD"
+    cpu: cpu
+    preemptible: preemptible
+  }
+
+  output {
+    File output_bam = ~{output_bam_name}
+  }
+
 }
 
 task SamToFastq {
+  input {
+    File input_bam
+    String docker = "us.gcr.io/broad-dsde-methods/sabeti-picard:2.23.2"
+  }
+
+  String output_fastq_name = "reverted.fastq"
+  Int cpu = 1
+  Int disk = ceil(size(input_bam), "GiB") * 4 + 10)
+  Int preemptible = 3
+
   command {
-    java -jar $PICARD_JAR_PATH SamToFastq I=reverted.bam FASTQ=reverted.fastq
+    set -e 
+
+    java -jar $PICARD_JAR_PATH SamToFastq I=~{input_bam} FASTQ=~{output_fastq_name}
+  }
+
+  runtime {
+    docker: docker
+    memory: "2 GiB"
+    disks: "local-disk ~{disk} HDD"
+    cpu: cpu
+    preemptible: preemptible
+  }
+
+  output {
+    output_fastq = ~{output_fastq_name}
   }
 }
 
 task BWAalign {
-  command {
-    bwa mem -t 12 bwa_ebov/kitwit9510621_KU182905.1.fasta reverted.fastq | samtools view -b - > realigned.bam
+  input {
+    File input_fastq
+    File reference_bundle
+    
+    String docker = ""
   }
 
+  String output_bam_name = "aligned.bam"
+  Int cpu = 1
+  Int disk = ceil(size(input_fastq, "GiB") * 4 + 10)
+  Int preemptible = 3
+
+  command {
+    set -e
+    
+    bwa mem -t ~{cpu} bwa_ebov/kitwit9510621_KU182905.1.fasta ~{input_fastq} | samtools view -b - > ~{output_bam_name}
+  }
+
+  runtime {
+    docker: docker
+    memory: "2 GiB"
+    disks: "local-disk ~{disk} HDD"
+    cpu: cpu
+    preemptible: preemptible
+  }
+
+  output {
+    File output_bam = ~{output_bam_name}
+  }
 }
 
 task MergeBamAlignment {
+  input {
+    File input_aligned_bam
+    File input_unaligned_bam
+    File reference_fasta
+    String docker="us.gcr.io/broad-dsde-methods/sabeti-picard:2.23.2"
+  }
+
+  String output_bam_name = "merged_alignments.bam"
+
   command {
-    java -jar $PICARD_JAR_PATH MergeBamAlignment ALIGNED=realigned.bam UNMAPPED=reverted.bam O=merge_alignments.bam REFERENCE_SEQUENCE=bwa_ebov/kitwit9510621_KU182905.1.fasta
+    java -jar ~{PICARD_JAR_PATH} MergeBamAlignment ALIGNED=~{input_aligned_bam} UNMAPPED=~{input_unaligned_bam} O=~{output_bam_name} REFERENCE_SEQUENCE=~{reference_fasta}
   }
 }
 
@@ -98,11 +207,12 @@ task TagReadWithGeneFunction {
 } 
 
 
-orkflow scViralPreprocess {
+workflow scViralPreprocess {
   input {
     File input_bam
     String viral_contig
-    File reference
+    File reference_bundle
+    File annotations_gtf
   }
 
   String version = "scViralPreprocess_v0.0.1"
@@ -110,7 +220,7 @@ orkflow scViralPreprocess {
   call FilterReads {
     input:
       input_bam = input_bam
-      viral_contig = viral_contig
+      region_keep = viral_contig
   }
 
   call RevertSam {
@@ -126,17 +236,23 @@ orkflow scViralPreprocess {
   call BWAalign {
     input:
       input_bam = SamToFastq.output_bam
-      reference = reference
+      reference_bundle = reference_bundle
   }
 
   call MergeBamAlignment {
     input:
       input_aligned = BWAalign.output_bam
-      input_unmapped = FilterReads.output_bam
+      input_unmapped = RevertSam.output_bam
   }
 
   call TagReadWithGeneFunction {
     input:
       bam_input = MergeBamAlignment.output_bam
+      annotations_gtf = annotations_gtf
+  }
+
+  output {
+    String pipeline_version = version
+    File output_bam = TagReadWithGeneFunction
   }
 }
