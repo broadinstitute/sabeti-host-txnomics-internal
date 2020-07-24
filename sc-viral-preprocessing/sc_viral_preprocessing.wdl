@@ -147,7 +147,7 @@ task BWAalign {
 
     tar xvzf ~{reference_bundle}
     
-    bwa mem -t ~{cpu} ~{reference_bundle_prefix} ~{input_fastq} | samtools view -b - > ~{output_bam_name}
+    bwa mem -t ~{cpu} ~{reference_bundle_prefix} ~{input_fastq} | samtools view -b -F 4 - > ~{output_bam_name}
   }
 
   runtime {
