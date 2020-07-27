@@ -147,7 +147,7 @@ task BWAalign {
 
     tar xvzf ~{reference_bundle}
     
-    bwa mem -t ~{cpu} ~{reference_bundle_prefix} ~{input_fastq} | samtools view -b -F 4 - > ~{output_bam_name}
+    bwa mem -t ~{cpu} ~{reference_bundle_prefix} ~{input_fastq} | samtools view -b - > ~{output_bam_name}
   }
 
   runtime {
@@ -263,6 +263,66 @@ task TagReadWithGeneFunction {
   }
 } 
 
+task FilterUnmapped {
+  input {
+    File bam_input
+    String docker = "us.gcr.io/broad-dsde-methods/sabeti-picard:2.23.2"
+  }
+
+  String output_bam_name = "output.bam"
+  Int cpu = 1
+  Int disk = ceil(size(bam_input, "GiB")  * 4 + 10)
+  Int preemptible = 3
+
+  command {
+    set -e
+
+    samtools view -b -F 4 ~{bam_input} > ~{output_bam_name}
+  }
+
+  runtime {
+    docker: docker
+    memory: "2 GiB"
+    disks: "local-disk ~{disk} HDD"
+    cpu: cpu
+    preemptible: preemptible
+  }
+
+  output {
+    File bam_output = output_bam_name
+  }
+}
+
+task umiCollapser {
+  input {
+    File bam_input
+    String docker = "us.gcr.io/broad-dsde-methods/sabeti-umi_collapser:0.0.1"
+  }
+
+  String output_bam_name = "output.bam"
+  Int machine_mem_mb = 8250
+  Int cpu = 1
+  Int disk = ceil(size(bam_input, "Gi") * 3 + 10)
+  Int preemptible = 3
+
+  command {
+    set -e
+    
+    umi_collapser -i ~{bam_input} -o ~{output_bam_name} --cell_barcode_tag XC --molecular_barcode_tag XM --gene_tag gn --calling_method posterior --verbose
+  }
+
+  runtime {
+    docker: docker
+    memory: "${machine_mem_mb} MiB"
+    disks: "local-disk ${disk} HDD"
+    cpu: cpu
+    preemptible: preemptible
+  }
+
+  output {
+    File bam_output = output_bam_name
+  }
+}
 
 workflow scViralPreprocess {
   input {
@@ -318,8 +378,18 @@ workflow scViralPreprocess {
       annotations_gtf = annotations_gtf
   }
 
+  call FilterUnmapped {
+    input:
+      bam_input = TagReadWithGeneFunction.bam_output
+  } 
+
+  call umiCollapser {
+    input:
+      bam_input = FilterUnmapped.bam_output
+  }
+
   output {
     String pipeline_version = version
-    File output_bam = TagReadWithGeneFunction.bam_output
+    File output_bam = umiCollapser.bam_output
   }
 }
