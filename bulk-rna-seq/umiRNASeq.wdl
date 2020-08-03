@@ -187,6 +187,37 @@ task removeDuplicates {
 
 }
 
+task featureCounts {
+    input {
+        File input_bam
+        File annotation_gtf
+    }
+
+    String counts_file_name = "counts.txt"
+
+    Int cpu = 1
+    Int disk = ceil(size(input_bam, "GiB") * 2 + 10)
+    Int preemptible = 3
+    String docker = "us.gcr.io/broad-dsde-methods/subread:2.0.1"
+
+    command {
+        featureCounts -T ~{cpu} -t exon -g gene_id -a ~{annotation_gtf} -o ~{counts_file_name} ~{input_bam}
+    }
+
+    runtime {
+        docker: docker
+        memory: "4 GiB"
+        disks: "local-disk ~{disk} HDD"
+        cpu: cpu
+        preemptible: preemptible
+    }
+
+    output {
+        File counts_file = counts_file_name
+    }
+
+}
+
 task fastqMerge {
     input {
          Array[File] r1_fastq
@@ -227,6 +258,7 @@ workflow umiRnaSeq {
       Array[File] r2_fastq
       Array[File] r3_fastq
       File reference
+      File annotation_gtf
   }
 
   String version = "umiRNASeq_v0.0.1"
@@ -266,6 +298,12 @@ workflow umiRnaSeq {
     input:
       bam = sort_and_index.output_bam,
       bam_index = sort_and_index.output_bam_index
+  }
+
+  call featureCounts {
+    input:
+        input_bam = removeDuplicates.deduplicated_bam,
+        annotation_gtf = annotation_gtf
   }
 
   output {
