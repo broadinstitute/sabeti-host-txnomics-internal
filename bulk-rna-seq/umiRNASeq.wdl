@@ -89,6 +89,35 @@ task StarAlign {
    }
 }
 
+task estimate_library_complexity {
+    input {
+        File input_bam
+    }
+
+    Int cpu = 1
+    Int disk = ceil(size(input_bam, "GiB") * 2 + 10)
+    Int preemptible = 3
+    String docker = "us.gcr.io/broad-dsde-methods/sabeti-picard:2.23.2"
+
+    String output_metrics_file = "est_lib_compl_metrics.txt"
+
+    command {
+        set -e
+        java -jar "$PICARD_JAR_PATH" EstimateLibraryComplexity I=~{input_bam} O=~{output_metrics_file}
+    }
+
+    runtime {
+        docker: docker
+        memory: "8 GiB"
+        disks: "local-disk ${disk} HDD"
+        cpu: cpu
+        preemptible: preemptible
+    }
+
+    output {
+        File library_complexity_metrics = output_metrics_file
+    }
+}
 
 task sort_and_index {
     input {
@@ -185,9 +214,9 @@ task fastqMerge {
     }
 
     output {
-      File r1_fastq = "r1_out.fastq.gz"
-      File r2_fastq = "r2_out.fastq.gz"
-      File r3_fastq = "r3_out.fastq.gz"
+      File r1_fastq_out = "r1_out.fastq.gz"
+      File r2_fastq_out = "r2_out.fastq.gz"
+      File r3_fastq_out = "r3_out.fastq.gz"
     }
 
 }
@@ -211,9 +240,9 @@ workflow umiRnaSeq {
 
   call umiTagger {
     input:
-      r1_fastq = fastqMerge.r1_fastq,
-      r2_fastq = fastqMerge.r2_fastq,
-      r3_fastq = fastqMerge.r3_fastq
+      r1_fastq = fastqMerge.r1_fastq_out,
+      r2_fastq = fastqMerge.r2_fastq_out,
+      r3_fastq = fastqMerge.r3_fastq_out
   }
 
   call StarAlign {
@@ -221,6 +250,11 @@ workflow umiRnaSeq {
       r1_fastq = umiTagger.r1_out_fastq,
       r2_fastq = umiTagger.r3_out_fastq,
       reference = reference
+  }
+
+  call estimate_library_complexity {
+    input:
+      input_bam = StarAlign.out_bam
   }
 
   call sort_and_index {
@@ -241,6 +275,8 @@ workflow umiRnaSeq {
     File r3_fastq_out = umiTagger.r3_out_fastq
 
     File aligned_bam = StarAlign.out_bam
+
+    File library_complexity_metrics = estimate_library_complexity.library_complexity_metrics
 
     File sorted_bam = sort_and_index.output_bam
     File sorted_bam_index = sort_and_index.output_bam_index
