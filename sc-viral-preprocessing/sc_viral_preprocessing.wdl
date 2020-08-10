@@ -9,7 +9,7 @@ task SortAndIndex {
   String output_bam_name = "sorted.bam"
   String output_bai_name = "sorted.bai"
   Int cpu = 1
-  Int disk = ceil(size(input_bam) * 3 + 10)
+  Int disk = ceil(size(input_bam, "GiB") * 3 + 10)
   Int preemptible =3 
 
   command {
@@ -212,7 +212,7 @@ task TagReadWithGeneFunction {
     String docker = "quay.io/humancellatlas/secondary-analysis-dropseqtools:2.3.0"
     Int machine_mem_mb = 8250
     Int cpu = 1
-    Int disk = ceil((size(bam_input, "Gi") + size(annotations_gtf, "Gi")) * 3) + 20
+    Int disk = ceil((size(bam_input, "GiB") + size(annotations_gtf, "GiB")) * 3) + 20
     Int preemptible = 3
   }
 
@@ -302,7 +302,7 @@ task umiCollapser {
   String output_bam_name = "output.bam"
   Int machine_mem_mb = 8250
   Int cpu = 1
-  Int disk = ceil(size(bam_input, "Gi") * 3 + 10)
+  Int disk = ceil(size(bam_input, "GiB") * 3 + 10)
   Int preemptible = 3
 
   command {
