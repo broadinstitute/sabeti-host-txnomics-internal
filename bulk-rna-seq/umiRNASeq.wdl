@@ -321,6 +321,8 @@ workflow umiRnaSeq {
 
     File deduplicated_bam = removeDuplicates.deduplicated_bam
     Array[File] dedup_stats = removeDuplicates.dedup_stats
+    
+    File counts_file = featureCounts.counts_file
   }
 
 }
