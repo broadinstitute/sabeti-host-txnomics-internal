@@ -13,7 +13,7 @@ task demux {
     }
 
     Int cpu = 1
-    Int disk = ceil(size(flowcell) * 10 + 10)
+    Int disk = ceil(size(flowcell,"GiB") * 10 + 10)
     Int preemptible = 3
     String docker = "us.gcr.io/broad-dsde-methods/sabeti-picard:2.23.2"
 
