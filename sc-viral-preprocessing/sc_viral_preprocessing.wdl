@@ -56,7 +56,7 @@ task FilterReads {
 
   runtime {
     docker: docker
-    memory: "2 GiB"
+    memory: "8 GiB"
     disks: "local-disk ~{disk} HDD"
     cpu: cpu
     preemptible: preemptible
@@ -81,7 +81,7 @@ task RevertSam {
   command {
     set -e
     
-    java -jar $PICARD_JAR_PATH RevertSam I=~{input_bam} O=~{output_bam_name}
+    java -Xmx6G -jar $PICARD_JAR_PATH RevertSam I=~{input_bam} O=~{output_bam_name}
   }
 
   runtime {
@@ -112,12 +112,12 @@ task SamToFastq {
   command {
     set -e 
 
-    java -jar $PICARD_JAR_PATH SamToFastq I=~{input_bam} FASTQ=~{output_fastq_name}
+    java -Xmx6G -jar $PICARD_JAR_PATH SamToFastq I=~{input_bam} FASTQ=~{output_fastq_name}
   }
 
   runtime {
     docker: docker
-    memory: "2 GiB"
+    memory: "8 GiB"
     disks: "local-disk ~{disk} HDD"
     cpu: cpu
     preemptible: preemptible
@@ -179,8 +179,8 @@ task MergeBamAlignment {
 
   command {
     set -e
-    java -jar $PICARD_JAR_PATH CreateSequenceDictionary R=~{reference_fasta}
-    java -jar $PICARD_JAR_PATH MergeBamAlignment ALIGNED=~{input_aligned_bam} UNMAPPED=~{input_unaligned_bam} O=~{output_bam_name} REFERENCE_SEQUENCE=~{reference_fasta}
+    java -Xmx6G -jar $PICARD_JAR_PATH CreateSequenceDictionary R=~{reference_fasta}
+    java -Xmx6G -jar $PICARD_JAR_PATH MergeBamAlignment ALIGNED=~{input_aligned_bam} UNMAPPED=~{input_unaligned_bam} O=~{output_bam_name} REFERENCE_SEQUENCE=~{reference_fasta}
   }
 
   output {
@@ -189,7 +189,7 @@ task MergeBamAlignment {
 
   runtime {
     docker: docker
-    memory: "2 GiB"
+    memory: "8 GiB"
     disk: "local-disk ~{disk} HDD"
     cpu: cpu
     preemptible: preemptible
