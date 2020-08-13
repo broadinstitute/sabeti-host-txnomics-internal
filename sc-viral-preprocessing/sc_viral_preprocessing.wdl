@@ -388,8 +388,13 @@ workflow scViralPreprocess {
       bam_input = FilterUnmapped.bam_output
   }
 
+  call SortAndIndex as FinalSortAndIndex {
+    input:
+      input_bam = umiCollapser.bam_output
+  }
+
   output {
     String pipeline_version = version
-    File output_bam = umiCollapser.bam_output
+    File output_bam = FinalSortAndIndex.output_bam
   }
 }
