@@ -27,7 +27,7 @@ task demux {
         printf "library_name\tbarcode_sequence_1\tbarcode_sequence_2\n" > barcodes.txt
         cat ~{sample_sheet} >> barcodes.txt
 
-        java -jar ~/sw/picard.jar ExtractIlluminaBarcodes \
+        java -jar $PICARD_JAR_PATH ExtractIlluminaBarcodes \
             BASECALLS_DIR=flowcell_dir/~{flowcell_basecall_path} \
             LANE=~{lane} \
             READ_STRUCTURE=~{read_structure} \
@@ -40,7 +40,7 @@ task demux {
         mkdir output
         cd output || exit
 
-        java -jar ~/sw/picard.jar IlluminaBasecallsToFastq \
+        java -jar $PICARD_JAR_PATH IlluminaBasecallsToFastq \
             READ_STRUCTURE=~{read_structure} \
             BASECALLS_DIR=../flowcell_dir/~{flowcell_basecall_path} \
             LANE=~{lane} \
