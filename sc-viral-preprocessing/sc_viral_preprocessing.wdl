@@ -15,13 +15,13 @@ task SortAndIndex {
   command {
     set -e
 
-    java -jar $PICARD_JAR_PATH SortSam I=~{input_bam} O=~{output_bam_name} SORT_ORDER=coordinate
+    java -Xmx6G -jar $PICARD_JAR_PATH SortSam I=~{input_bam} O=~{output_bam_name} SORT_ORDER=coordinate
     java -jar $PICARD_JAR_PATH BuildBamIndex I=~{output_bam_name}
   }
 
   runtime {
     docker: docker
-    memory: "2 GiB"
+    memory: "8 GiB"
     disks: "local-disk ~{disk} HDD"
     cpu: cpu
     preemptible: preemptible
