@@ -300,7 +300,6 @@ task umiCollapser {
   }
 
   String output_bam_name = "output.bam"
-  Int machine_mem_mb = 8250
   Int cpu = 1
   Int disk = ceil(size(bam_input, "GiB") * 3 + 10)
   Int preemptible = 3
@@ -313,7 +312,7 @@ task umiCollapser {
 
   runtime {
     docker: docker
-    memory: "${machine_mem_mb} MiB"
+    memory: "32 GiB"
     disks: "local-disk ${disk} HDD"
     cpu: cpu
     preemptible: preemptible
