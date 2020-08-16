@@ -60,7 +60,7 @@ task StarAlign {
       mkdir genome_reference
       tar -xf "${reference}" -C genome_reference
       #rm "${reference}"
-      
+
       find genome_reference -type d
 
       STAR \
@@ -150,7 +150,7 @@ task countBamReads {
 task downsampleBam {
     input {
         File input_bam
-	Float probability = 0.5
+        Float probability = 0.5
     }
 
     Int cpu = 1
@@ -162,7 +162,7 @@ task downsampleBam {
 
     command {
         set -e
-	java -jar "$PICARD_JAR_PATH" DownsampleSam I=~{input_bam} O=~{downsampled_bam_file} STRATEGY=Chained P=~{probability}
+        java -jar "$PICARD_JAR_PATH" DownsampleSam I=~{input_bam} O=~{downsampled_bam_file} STRATEGY=Chained P=~{probability}
     }
 
     runtime {
