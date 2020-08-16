@@ -59,7 +59,7 @@ task StarAlign {
       # prepare reference
       mkdir genome_reference
       tar -xf "${reference}" -C genome_reference
-      rm "${reference}"
+      #rm "${reference}"
       
       find genome_reference -type d
 
@@ -119,6 +119,65 @@ task estimate_library_complexity {
     }
 }
 
+task countBamReads {
+    input {
+      File input_bam
+    }
+
+    Int cpu = 1
+    Int disk = ceil(size(input_bam, "GiB") * 1.1 + 10)
+    Int preemptible = 3
+    String docker = "us.gcr.io/broad-dsde-methods/sabeti-bulk-plp-hisat2:0.0.1"
+
+    command {
+      set -3
+      samtools view -c ~{input_bam} > read_count.txt
+    }
+
+    runtime {
+      docker: docker
+      memory: "8 GiB"
+      disks: "local-disk ${disk} HDD"
+      cpu: cpu
+      preemptible: preemptible
+    }
+
+    output {
+      Int read_count = read_int("read_count.txt")
+    }
+}
+
+task downsampleBam {
+    input {
+        File input_bam
+	Float probability = 0.5
+    }
+
+    Int cpu = 1
+    Int disk = ceil(size(input_bam, "GiB") * 2 + 10)
+    Int preemptible = 3
+    String docker = "us.gcr.io/broad-dsde-methods/sabeti-picard:2.23.2"
+
+    String downsampled_bam_file = "downsampled.bam"
+
+    command {
+        set -e
+	java -jar "$PICARD_JAR_PATH" DownsampleSam I=~{input_bam} O=~{downsampled_bam_file} STRATEGY=Chained P=~{probability}
+    }
+
+    runtime {
+        docker: docker
+        memory: "8 GiB"
+        disks: "local-disk ${disk} HDD"
+        cpu: cpu
+        preemptible: preemptible
+    }
+
+    output {
+        File output_bam = downsampled_bam_file
+    }
+}
+
 task sort_and_index {
     input {
        File input_bam
@@ -166,9 +225,9 @@ task removeDuplicates {
 
     command {
        set -e
-       touch ~{bam}
-       sleep 1
-       touch ~{bam}.bai
+       #touch ~{bam}
+       #sleep 1
+       #touch ~{bam}.bai
        umi_tools dedup -I ~{bam} --chimeric-pairs=discard --unpaired-reads=discard --paired --output-stats=dedup_stats -S ~{out_bam}
     }
 
@@ -258,9 +317,12 @@ workflow umiRnaSeq {
       Array[File] r2_fastq
       Array[File] r3_fastq
       File reference
+      String reference_prefix
       File annotation_gtf
+      Boolean subsampling = false
   }
 
+  Array[Float] subsample_values = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
   String version = "umiRNASeq_v0.0.1"
   
   call fastqMerge {
@@ -281,12 +343,39 @@ workflow umiRnaSeq {
     input:
       r1_fastq = umiTagger.r1_out_fastq,
       r2_fastq = umiTagger.r3_out_fastq,
-      reference = reference
+      reference = reference,
+      reference_prefix = reference_prefix
   }
 
   call estimate_library_complexity {
     input:
       input_bam = StarAlign.out_bam
+  }
+
+  if ( subsampling ) {
+    scatter ( p in subsample_values ) {
+      call downsampleBam {
+        input:
+          input_bam = StarAlign.out_bam,
+          probability = p
+      }
+
+      call sort_and_index as sortIndexSubsampled {
+        input:
+          input_bam = downsampleBam.output_bam
+      }
+
+      call removeDuplicates as removeDuplicatesSubsampled {
+        input:
+          bam = sortIndexSubsampled.output_bam,
+          bam_index = sortIndexSubsampled.output_bam_index
+      }
+
+      call countBamReads {
+        input:
+          input_bam = removeDuplicatesSubsampled.deduplicated_bam
+      }
+    }
   }
 
   call sort_and_index {
@@ -321,6 +410,9 @@ workflow umiRnaSeq {
 
     File deduplicated_bam = removeDuplicates.deduplicated_bam
     Array[File] dedup_stats = removeDuplicates.dedup_stats
+
+    Array[Float] subsample_values_out = subsample_values
+    Array[Int]? read_count = countBamReads.read_count
     
     File counts_file = featureCounts.counts_file
   }
