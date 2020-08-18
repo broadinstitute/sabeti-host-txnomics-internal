@@ -260,7 +260,7 @@ task featureCounts {
     String docker = "us.gcr.io/broad-dsde-methods/subread:2.0.1"
 
     command {
-        featureCounts -T ~{cpu} -t exon -g gene_id -a ~{annotation_gtf} -o ~{counts_file_name} ~{input_bam}
+        featureCounts -p -T ~{cpu} -t exon -g gene_id -a ~{annotation_gtf} -o ~{counts_file_name} ~{input_bam}
     }
 
     runtime {
