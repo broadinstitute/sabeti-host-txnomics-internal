@@ -359,6 +359,11 @@ workflow umiRnaSeq {
           input_bam = StarAlign.out_bam,
           probability = p
       }
+      
+      call countBamReads as preDedupCounting {
+        input:
+	  input_bam = downsampleBam.output_bam
+      }
 
       call sort_and_index as sortIndexSubsampled {
         input:
@@ -412,6 +417,7 @@ workflow umiRnaSeq {
     Array[File] dedup_stats = removeDuplicates.dedup_stats
 
     Array[Float] subsample_values_out = subsample_values
+    Array[Int]? pre_subsample_read_count = preDedupCounting.read_count
     Array[Int]? read_count = countBamReads.read_count
     
     File counts_file = featureCounts.counts_file
