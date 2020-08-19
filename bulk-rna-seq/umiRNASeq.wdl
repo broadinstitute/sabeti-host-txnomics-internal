@@ -70,7 +70,7 @@ task StarAlign {
           --readFilesIn ~{r1_fastq} ~{r2_fastq} \
           --outSAMtype BAM Unsorted \
           --outSAMattributes All \
-          --outSAMunmapped Within \
+          --outSAMunmapped None \
           --readFilesType Fastx \
           --runRNGseed 777
         }
