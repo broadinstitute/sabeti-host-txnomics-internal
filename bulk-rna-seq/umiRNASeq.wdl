@@ -103,7 +103,7 @@ task filterMultimaps {
 
     command {
         set -e
-	samtools view -b -F 0xF00 -c ~{input_bam} > ~{output_bam_filename}
+        samtools view -b -F 0xF00 -c ~{input_bam} > ~{output_bam_filename}
     }
 
     runtime {
@@ -180,7 +180,7 @@ task countBamReads {
 task downsampleBam {
     input {
         File input_bam
-	Float probability = 0.5
+        Float probability = 0.5
     }
 
     Int cpu = 1
@@ -397,7 +397,7 @@ workflow umiRnaSeq {
       
       call countBamReads as preDedupCounting {
         input:
-	  input_bam = downsampleBam.output_bam
+          input_bam = downsampleBam.output_bam
       }
 
       call sort_and_index as sortIndexSubsampled {
