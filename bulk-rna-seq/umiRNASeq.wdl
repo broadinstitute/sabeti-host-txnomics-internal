@@ -89,6 +89,36 @@ task StarAlign {
    }
 }
 
+task filterMultimaps {
+    input {
+        File input_bam
+    }
+
+    Int cpu = 1
+    Int disk = ceil(size(input_bam, "GiB") * 2 + 10)
+    Int preemptible = 3
+    String docker = "us.gcr.io/broad-dsde-methods/sabeti-bulk-plp-hisat2:0.0.1"
+
+    String output_bam_filename = "output.bam"
+
+    command {
+        set -e
+	samtools view -b -F 0xF00 -c ~{input_bam} > ~{output_bam_filename}
+    }
+
+    runtime {
+        docker: docker
+        memory: "4 GiB"
+        disks: "local-disk ${disk} HDD"
+        cpu: cpu
+        preemptible: preemptible
+    }
+
+    output {
+        File output_bam = output_bam_filename
+    }    
+}
+
 task estimate_library_complexity {
     input {
         File input_bam
@@ -130,7 +160,7 @@ task countBamReads {
     String docker = "us.gcr.io/broad-dsde-methods/sabeti-bulk-plp-hisat2:0.0.1"
 
     command {
-      set -3
+      set -e
       samtools view -c ~{input_bam} > read_count.txt
     }
 
@@ -347,16 +377,21 @@ workflow umiRnaSeq {
       reference_prefix = reference_prefix
   }
 
-  call estimate_library_complexity {
+  call filterMultimaps {
     input:
       input_bam = StarAlign.out_bam
+  }
+
+  call estimate_library_complexity {
+    input:
+      input_bam = filterMultimaps.output_bam
   }
 
   if ( subsampling ) {
     scatter ( p in subsample_values ) {
       call downsampleBam {
         input:
-          input_bam = StarAlign.out_bam,
+          input_bam = filterMultimaps.output_bam,
           probability = p
       }
       
@@ -385,7 +420,7 @@ workflow umiRnaSeq {
 
   call sort_and_index {
     input:
-      input_bam = StarAlign.out_bam
+      input_bam = filterMultimaps.output_bam
   }
 
   call removeDuplicates {
@@ -406,7 +441,7 @@ workflow umiRnaSeq {
     File r1_fastq_out = umiTagger.r1_out_fastq
     File r3_fastq_out = umiTagger.r3_out_fastq
 
-    File aligned_bam = StarAlign.out_bam
+    File aligned_bam = filterMultimaps.output_bam
 
     File library_complexity_metrics = estimate_library_complexity.library_complexity_metrics
 
