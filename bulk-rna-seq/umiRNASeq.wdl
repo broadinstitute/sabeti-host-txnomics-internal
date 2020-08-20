@@ -103,7 +103,7 @@ task filterMultimaps {
 
     command {
         set -e
-        samtools view -b -F 0xF00 -c ~{input_bam} > ~{output_bam_filename}
+        samtools view -b -F 0xF00 ~{input_bam} > ~{output_bam_filename}
     }
 
     runtime {
