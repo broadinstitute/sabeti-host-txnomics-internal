@@ -349,7 +349,9 @@ workflow umiRnaSeq {
       File reference
       String reference_prefix
       File annotation_gtf
+      
       Boolean subsampling = false
+      Boolean do_estimate_library_complexity = false
   }
 
   Array[Float] subsample_values = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
@@ -382,9 +384,11 @@ workflow umiRnaSeq {
       input_bam = StarAlign.out_bam
   }
 
-  call estimate_library_complexity {
-    input:
-      input_bam = filterMultimaps.output_bam
+  if (do_estimate_library_complexity) {
+    call estimate_library_complexity {
+      input:
+        input_bam = filterMultimaps.output_bam
+    }
   }
 
   if ( subsampling ) {
@@ -443,7 +447,7 @@ workflow umiRnaSeq {
 
     File aligned_bam = filterMultimaps.output_bam
 
-    File library_complexity_metrics = estimate_library_complexity.library_complexity_metrics
+    File? library_complexity_metrics = estimate_library_complexity.library_complexity_metrics
 
     File sorted_bam = sort_and_index.output_bam
     File sorted_bam_index = sort_and_index.output_bam_index
