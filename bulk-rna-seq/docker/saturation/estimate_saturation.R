@@ -1,4 +1,4 @@
-#!/usr/bin/env R
+#!/usr/bin/env Rscript
 
 
 library('preseqR')
@@ -42,6 +42,8 @@ m <- data.frame(
   count = lib_size * s,
   preseqR.rSAC = preseqR.rSAC(d2)(s)
 )
+
+write.csv(m,'saturation.tsv')
 
 m2 <- melt(m,id.vars = c('count'))
 
