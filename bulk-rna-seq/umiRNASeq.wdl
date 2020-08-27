@@ -272,8 +272,39 @@ task removeDuplicates {
     output {
        File deduplicated_bam = out_bam
        Array[File] dedup_stats = glob("dedup_stats*")
+       File dedup_stats_per_umi_per_position = "dedup_stats/dedup_stats_per_umi_per_position.tsv"
     }
 
+}
+
+task generate_saturation_info {
+    input {
+        File dedup_stats_per_umi_per_position
+	String sample_name = "Sample"
+    }
+
+    Int cpu = 1
+    Int disk = 10
+    Int preemptible = 3
+    String docker = ""
+
+    command {
+        estimate_saturation.R -i ~{dedup_stats_per_umi_per_position} -n ~{sample_name}
+    }
+
+    runtime {
+      docker: docker
+      memory: "4 GiB"
+      disks: "local-disk ~{disk} HDD"
+      cpu: cpu
+      preemptible: preemptible
+    }
+
+    output {
+      File saturation_plot = "saturation_curve.pdf"
+      File saturation_table = "saturation.tsv"
+    }
+    
 }
 
 task featureCounts {
@@ -352,6 +383,7 @@ workflow umiRnaSeq {
       
       Boolean subsampling = false
       Boolean do_estimate_library_complexity = false
+      Boolean do_generate_saturation_info = true
   }
 
   Array[Float] subsample_values = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
@@ -433,6 +465,13 @@ workflow umiRnaSeq {
       bam_index = sort_and_index.output_bam_index
   }
 
+  if ( do_generate_saturation_info ) {
+    call generate_saturation_info {
+      input:
+        dedup_stats_per_umi_per_position = removeDuplicates.dedup_stats_per_umi_per_position
+    }
+  }
+
   call featureCounts {
     input:
         input_bam = removeDuplicates.deduplicated_bam,
@@ -454,6 +493,8 @@ workflow umiRnaSeq {
 
     File deduplicated_bam = removeDuplicates.deduplicated_bam
     Array[File] dedup_stats = removeDuplicates.dedup_stats
+    File? saturation_plot = generate_saturation_info.saturation_plot
+    File? saturation_table = generate_saturation_info.saturation_table
 
     Array[Float] subsample_values_out = subsample_values
     Array[Int]? pre_subsample_read_count = preDedupCounting.read_count
