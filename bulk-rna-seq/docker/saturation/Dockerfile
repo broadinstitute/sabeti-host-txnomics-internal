@@ -41,3 +41,5 @@ RUN Rscript /root/installRDeps.R \
     && rm installRDeps.R
 
 COPY estimate_saturation.R /root/
+
+ENV PATH=${PATH}:/root/
