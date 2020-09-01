@@ -272,7 +272,7 @@ task removeDuplicates {
     output {
        File deduplicated_bam = out_bam
        Array[File] dedup_stats = glob("dedup_stats*")
-       File dedup_stats_per_umi_per_position = "dedup_stats/dedup_stats_per_umi_per_position.tsv"
+       File dedup_stats_per_umi_per_position = "dedup_stats_per_umi_per_position.tsv"
     }
 
 }
