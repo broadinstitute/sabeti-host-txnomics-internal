@@ -286,7 +286,7 @@ task generate_saturation_info {
     Int cpu = 1
     Int disk = 10
     Int preemptible = 3
-    String docker = ""
+    String docker = "us.gcr.io/broad-dsde-methods/sabeti-saturation:0.0.1"
 
     command {
         estimate_saturation.R -i ~{dedup_stats_per_umi_per_position} -n ~{sample_name}
