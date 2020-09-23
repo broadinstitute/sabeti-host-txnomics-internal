@@ -1,0 +1,4 @@
+{
+    "buildAnnotation.input_bams": ["/home/nbarkas/disk1/test_stringtie2/testdata1/output.bam"],
+    "buildAnnotation.annotations_gtf": "/home/nbarkas/disk1/test_stringtie2/testdata1/annotation.gtf"
+}
