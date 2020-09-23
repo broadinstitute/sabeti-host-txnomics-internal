@@ -9,19 +9,19 @@ task SortAndIndex {
   String output_bam_name = "sorted.bam"
   String output_bai_name = "sorted.bai"
   Int cpu = 1
-  Int disk = ceil(size(input_bam) * 3 + 10)
+  Int disk = ceil(size(input_bam, "GiB") * 3 + 10)
   Int preemptible =3 
 
   command {
     set -e
 
-    java -jar $PICARD_JAR_PATH SortSam I=~{input_bam} O=~{output_bam_name} SORT_ORDER=coordinate
+    java -Xmx6G -jar $PICARD_JAR_PATH SortSam I=~{input_bam} O=~{output_bam_name} SORT_ORDER=coordinate
     java -jar $PICARD_JAR_PATH BuildBamIndex I=~{output_bam_name}
   }
 
   runtime {
     docker: docker
-    memory: "2 GiB"
+    memory: "8 GiB"
     disks: "local-disk ~{disk} HDD"
     cpu: cpu
     preemptible: preemptible
@@ -56,7 +56,7 @@ task FilterReads {
 
   runtime {
     docker: docker
-    memory: "2 GiB"
+    memory: "8 GiB"
     disks: "local-disk ~{disk} HDD"
     cpu: cpu
     preemptible: preemptible
@@ -81,7 +81,7 @@ task RevertSam {
   command {
     set -e
     
-    java -jar $PICARD_JAR_PATH RevertSam I=~{input_bam} O=~{output_bam_name}
+    java -Xmx6G -jar $PICARD_JAR_PATH RevertSam I=~{input_bam} O=~{output_bam_name}
   }
 
   runtime {
@@ -112,12 +112,12 @@ task SamToFastq {
   command {
     set -e 
 
-    java -jar $PICARD_JAR_PATH SamToFastq I=~{input_bam} FASTQ=~{output_fastq_name}
+    java -Xmx6G -jar $PICARD_JAR_PATH SamToFastq I=~{input_bam} FASTQ=~{output_fastq_name}
   }
 
   runtime {
     docker: docker
-    memory: "2 GiB"
+    memory: "8 GiB"
     disks: "local-disk ~{disk} HDD"
     cpu: cpu
     preemptible: preemptible
@@ -179,8 +179,8 @@ task MergeBamAlignment {
 
   command {
     set -e
-    java -jar $PICARD_JAR_PATH CreateSequenceDictionary R=~{reference_fasta}
-    java -jar $PICARD_JAR_PATH MergeBamAlignment ALIGNED=~{input_aligned_bam} UNMAPPED=~{input_unaligned_bam} O=~{output_bam_name} REFERENCE_SEQUENCE=~{reference_fasta}
+    java -Xmx6G -jar $PICARD_JAR_PATH CreateSequenceDictionary R=~{reference_fasta}
+    java -Xmx6G -jar $PICARD_JAR_PATH MergeBamAlignment ALIGNED=~{input_aligned_bam} UNMAPPED=~{input_unaligned_bam} O=~{output_bam_name} REFERENCE_SEQUENCE=~{reference_fasta}
   }
 
   output {
@@ -189,7 +189,7 @@ task MergeBamAlignment {
 
   runtime {
     docker: docker
-    memory: "2 GiB"
+    memory: "8 GiB"
     disk: "local-disk ~{disk} HDD"
     cpu: cpu
     preemptible: preemptible
@@ -212,7 +212,7 @@ task TagReadWithGeneFunction {
     String docker = "quay.io/humancellatlas/secondary-analysis-dropseqtools:2.3.0"
     Int machine_mem_mb = 8250
     Int cpu = 1
-    Int disk = ceil((size(bam_input, "Gi") + size(annotations_gtf, "Gi")) * 3) + 20
+    Int disk = ceil((size(bam_input, "GiB") + size(annotations_gtf, "GiB")) * 3) + 20
     Int preemptible = 3
   }
 
@@ -300,9 +300,8 @@ task umiCollapser {
   }
 
   String output_bam_name = "output.bam"
-  Int machine_mem_mb = 8250
   Int cpu = 1
-  Int disk = ceil(size(bam_input, "Gi") * 3 + 10)
+  Int disk = ceil(size(bam_input, "GiB") * 3 + 10)
   Int preemptible = 3
 
   command {
@@ -313,7 +312,7 @@ task umiCollapser {
 
   runtime {
     docker: docker
-    memory: "${machine_mem_mb} MiB"
+    memory: "32 GiB"
     disks: "local-disk ${disk} HDD"
     cpu: cpu
     preemptible: preemptible
@@ -388,8 +387,13 @@ workflow scViralPreprocess {
       bam_input = FilterUnmapped.bam_output
   }
 
+  call SortAndIndex as FinalSortAndIndex {
+    input:
+      input_bam = umiCollapser.bam_output
+  }
+
   output {
     String pipeline_version = version
-    File output_bam = umiCollapser.bam_output
+    File output_bam = FinalSortAndIndex.output_bam
   }
 }
