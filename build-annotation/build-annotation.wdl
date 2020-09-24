@@ -87,6 +87,10 @@ task StringTie2_merge {
     cpu: cpu
     preemptible: preemptible
   }
+
+  output {
+    File merged_annotation = output_annotation_filename
+  }
 } 
 
 workflow buildAnnotation {
@@ -119,5 +123,6 @@ workflow buildAnnotation {
   output {
      String pipeline_version = version
      Array[File] stringtie_output_gtfs = StringTie2.output_annotation
+     File merged_gtf = StringTie2_merge.merged_annotation
   }
 } 
