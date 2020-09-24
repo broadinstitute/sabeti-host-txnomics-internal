@@ -68,7 +68,6 @@ workflow buildAnnotationNoMerge {
   input {
     File input_bam
     File annotations_gtf
-    String sample_name
   }
 
   String version = "build-annotation_v0.0.1"
@@ -86,7 +85,6 @@ workflow buildAnnotationNoMerge {
 
   output {
      String pipeline_version = version
-     String sample_id = sample_name
      File stringtie_output_gtf = StringTie2.output_annotation
   }
 } 
