@@ -63,35 +63,6 @@ task StringTie2 {
   }
 }
 
-task StringTie2_merge {
-  input {
-    Array[File] input_gtf
-    File guide_gtf
-  }
-
-  String output_annotation_filename = "merged_annot.gtf"
-  String docker = "us.gcr.io/broad-dsde-methods/sabeti-bulk-plp-stringtie2:0.0.1"
-  Int cpu = 1
-  Int disk = 500
-  Int preemptible = 3
-
-  command {
-    set -e
-    stringtie --merge -G ~{guide_gtf} -o ~{output_annotation_filename} -m 50 -c 0 -F 0 -T 0 -f 0.01 -l MSTRG ~{sep=' ' input_gtf}
-  }
-
-  runtime {
-    docker: docker
-    memory: "8 GiB"
-    disks: "local-disk ~{disk} HDD"
-    cpu: cpu
-    preemptible: preemptible
-  }
-
-  output {
-    File merged_annotation = output_annotation_filename
-  }
-} 
 
 workflow buildAnnotationNoMerge {
   input {
