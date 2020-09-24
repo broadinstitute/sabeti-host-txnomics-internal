@@ -72,7 +72,7 @@ task StringTie2_merge {
   String output_annotation_filename = "merged_annot.gtf"
   String docker = "us.gcr.io/broad-dsde-methods/sabeti-bulk-plp-stringtie2:0.0.1"
   Int cpu = 1
-  Int disk = ceil(size(input_gtf) * 2 + 10)
+  Int disk = 500
   Int preemptible = 3
 
   command {
