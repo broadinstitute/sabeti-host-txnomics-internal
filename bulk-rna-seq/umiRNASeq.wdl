@@ -73,7 +73,12 @@ task StarAlign {
           --outSAMunmapped None \
           --readFilesType Fastx \
           --runRNGseed 777
-        }
+
+      # Extract some key metrics
+      grep "Number of input reads" Log.final.out | cut -f 2 -d '|' | tr -d '\t\n' > outval_inputreads.txt
+      grep "Uniquely mapped reads number" Log.final.out | cut -f 2 -d '|' | tr -d '\t\n' > outval_uniquelyaligned.txt
+      grep "Number of reads mapped to multiple loci" Log.final.out | cut -f 2 -d '|' | tr -d '\t\n' > outval_multimaps.txt
+      }
 
       runtime {
           docker: docker
@@ -86,6 +91,9 @@ task StarAlign {
   output {
       File out_bam = "Aligned.out.bam"
       File alignment_log = "Log.final.out"
+      Int input_reads = read_int("outval_inputreads.txt")
+      Int uniquely_aligned_reads = read_int("outval_uniquelyaligned.txt")
+      Int multimap_reads = read_int("outval_multimaps.txt")
    }
 }
 
@@ -501,6 +509,10 @@ workflow umiRnaSeq {
     Array[Int]? read_count = countBamReads.read_count
     
     File counts_file = featureCounts.counts_file
+
+    Int alignment_input_reads = StarAlign.input_reads
+    Int alignment_unique_reads = StarAlign.uniquely_aligned_reads
+    Int alignment_multimaped_reads = StarAlign.multimap_reads
   }
 
 }
