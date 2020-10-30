@@ -13,17 +13,17 @@ task inputValidation{
     set -e
 
     for cur_file in ~{ sep=' ' r1_fastq } ~{ sep=' ' r2_fastq } ~{ sep=' ' r3_fastq }; do
-    	if [ -s $cur_file ]; then
-	   echo File $cur_file is empty 
-    	   exit 1
-    	fi
+        if [ -s $cur_file ]; then
+           echo File $cur_file is empty
+           exit 1
+        fi
     done
   }
 
   output {
 
-  }  
-  
+  }
+
 }
 
 
@@ -151,7 +151,7 @@ task filterMultimaps {
 
     output {
         File output_bam = output_bam_filename
-    }    
+    }
 }
 
 task estimate_library_complexity {
