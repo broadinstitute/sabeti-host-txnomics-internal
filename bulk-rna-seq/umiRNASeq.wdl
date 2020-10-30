@@ -1,44 +1,5 @@
 version 1.0
 
-task inputValidation{
-  input {
-     Array[File] r1_fastq
-     Array[File] r2_fastq
-     Array[File] r3_fastq
-
-     String docker = "us.gcr.io/broad-dsde-methods/sabeti-bulk-plp-umi_tagger:0.0.1"
-  }
-
-  Int cpu = 1
-  Int disk = ceil(size(r1_fastq, "GiB") * 2.5 + size(r2_fastq, "GiB") * 2.5 + size(r3_fastq, "GiB") + 50)
-  Int preemptible = 3
-
-  command {
-    set -e
-
-    for $cur_file in ~{ sep=' ' r1_fastq } ~{ sep=' ' r2_fastq } ~{ sep=' ' r3_fastq }; do
-        if [ -s $cur_file ]; then
-           echo File $cur_file is empty
-           exit 1
-        fi
-    done
-  }
-
-  runtime {
-    docker: docker
-    memory: "2 GiB"
-    disks: "local-disk ~{disk} HDD"
-    cpu: cpu
-    preemptible: preemptible
-  }
-
-  output {
-
-  }
-
-}
-
-
 task umiTagger {
   input {
       File r1_fastq
@@ -435,13 +396,6 @@ workflow umiRnaSeq {
 
   Array[Float] subsample_values = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
   String version = "umiRNASeq_v0.0.1"
-
-  call inputValidation {
-    input:
-      r1_fastq = r1_fastq,
-      r2_fastq = r2_fastq,
-      r3_fastq = r3_fastq
-  }
 
   call fastqMerge {
     input:
