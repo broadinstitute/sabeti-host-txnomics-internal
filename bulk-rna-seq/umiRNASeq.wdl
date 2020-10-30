@@ -9,6 +9,10 @@ task inputValidation{
      String docker = "us.gcr.io/broad-dsde-methods/sabeti-bulk-plp-umi_tagger:0.0.1"
   }
 
+  Int cpu = 1
+  Int disk = ceil(size(r1_fastq, "GiB") * 2.5 + size(r2_fastq, "GiB") * 2.5 + size(r3_fastq, "GiB") + 50)
+  Int preemptible = 3
+
   command {
     set -e
 
@@ -18,6 +22,14 @@ task inputValidation{
            exit 1
         fi
     done
+  }
+
+  runtime {
+    docker: docker
+    memory: "2 GiB"
+    disks: "local-disk ~{disk} HDD"
+    cpu: cpu
+    preemptible: preemptible
   }
 
   output {
