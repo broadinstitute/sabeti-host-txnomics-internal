@@ -16,7 +16,7 @@ task inputValidation{
   command {
     set -e
 
-    for cur_file in ~{ sep=' ' r1_fastq } ~{ sep=' ' r2_fastq } ~{ sep=' ' r3_fastq }; do
+    for $cur_file in ~{ sep=' ' r1_fastq } ~{ sep=' ' r2_fastq } ~{ sep=' ' r3_fastq }; do
         if [ -s $cur_file ]; then
            echo File $cur_file is empty
            exit 1
