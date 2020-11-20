@@ -12,7 +12,7 @@ task umiTagger {
   String r1_out_name = "r1.fastq"
   String r3_out_name = "r3.fastq"
   Int cpu = 1
-  Int disk = ceil(size(r1_fastq, "GiB") * 4 + size(r2_fastq, "GiB") * 4 + size(r3_fastq, "GiB") * 4 + 10)
+  Int disk = ceil(size(r1_fastq, "GiB") * 10 + size(r2_fastq, "GiB") * 10 + size(r3_fastq, "GiB") * 10 + 30)
   Int preemptible = 3
 
   command {
