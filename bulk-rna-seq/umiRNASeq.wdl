@@ -324,7 +324,7 @@ task featureCounts {
     String counts_file_name = "counts.txt"
 
     Int cpu = 1
-    Int disk = ceil(size(input_bam, "GiB") * 2 + 10)
+    Int disk = ceil(size(input_bam, "GiB") * 4 + 10)
     Int preemptible = 3
     String docker = "us.gcr.io/broad-dsde-methods/subread:2.0.1"
 
