@@ -271,7 +271,7 @@ task removeDuplicates {
 
     runtime {
        docker: docker
-       memory: "64 GiB"
+       memory: "128 GiB"
        disks: "local-disk ~{disk} HDD"
        cpu: cpu
        preemptible: preemptible
