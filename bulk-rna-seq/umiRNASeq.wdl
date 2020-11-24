@@ -334,7 +334,7 @@ task featureCounts {
 
     runtime {
         docker: docker
-        memory: "4 GiB"
+        memory: "16 GiB"
         disks: "local-disk ~{disk} HDD"
         cpu: cpu
         preemptible: preemptible
