@@ -44,10 +44,11 @@ task StringTie2 {
   Int cpu = 1
   Int disk = ceil(size(input_bam, "GiB") * 2 + 10)
   Int preemptible = 3
-
+  String direction_flag = "--fr"
+  
   command {
     set -e
-    stringtie -G ~{annotation_gtf} -p ~{cpu} -o ~{output_annotation_filename} ~{input_bam}
+    stringtie -G ~{annotation_gtf} -p ~{cpu} ~{direction_flag} -o ~{output_annotation_filename} ~{input_bam}
   }
 
   runtime {
